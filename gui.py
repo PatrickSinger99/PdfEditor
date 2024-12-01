@@ -22,7 +22,7 @@ class PageFrame(tk.Frame):
         self.pdf_name = self.app.handler.loaded_pdfs[self.element.page_objects[0].pdf_id]["name"]
         self.original_page = self.element.page_objects[0].original_index
 
-        self.configure(width=140, height=160)
+        self.configure(width=160, height=200)
         self.pack_propagate(False)
 
         """ADD AREA"""
@@ -95,6 +95,7 @@ class CollapsedFrame(tk.Frame):
     def display_preview_image(self):
         pass
 
+
 class App(tk.Tk):
     col = {
         "header": "#CC4B4C",
@@ -115,40 +116,49 @@ class App(tk.Tk):
         self.header = tk.Frame(self, bg=App.col["header"])
         self.header.pack(side="top", fill="x")
 
+        # Program Title Label
         tk.Label(self.header, bg=self.header.cget("bg"), text="Title", font=Font(size=11)).pack(side="left")
 
+        # BUTTON: Add pdf file
         self.add_pdf_button = tk.Button(self.header, text="Add PDF", command=self.on_add_new_pdf)
         self.add_pdf_button.pack(side="right")
-
 
         """BODY"""
         self.body = tk.Frame(self, bg=App.col["body"])
         self.body.pack(side="top", fill="both", expand=True)
 
+        # Scrollable frame
         self.scrollable_frame = ScrollableFrame(self.body, bg=self.body.cget("bg"))
         self.scrollable_frame.pack(fill="both", expand=True)
-        self.view = self.scrollable_frame.scrollable_frame
+        self.view = self.scrollable_frame.scrollable_frame  # Content is added to self.view
 
         """FOOTER"""
         self.footer = tk.Frame(self, bg=App.col["footer"])
         self.footer.pack(side="bottom", fill="x")
 
+        # FRAME: Button Frame
         self.action_button_frame = tk.Frame(self.footer, bg=self.footer.cget("bg"))
         self.action_button_frame.pack(side="right", padx=2, pady=2)
 
+        # BUTTON: Export to pdf
         self.export_button = tk.Button(self.action_button_frame, text="Create PDF")
         self.export_button.pack()
 
-    def on_add_new_pdf(self):
-        # Open a file dialog to allow the user to choose a PDF file
-        file_path = filedialog.askopenfilename(
-            title="Select a PDF file",
-            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
-        )
+    def on_add_new_pdf(self, debug_filepath=None, collapsed_load=True):
+
+        # Debug filepath overwrites filedialog
+        if debug_filepath is not None:
+            file_path = debug_filepath
+        else:
+            # Open a file dialog to allow the user to choose a PDF file
+            file_path = filedialog.askopenfilename(
+                title="Select a PDF file",
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+            )
 
         # Check if the user selected a file (i.e., the file path is not empty)
         if file_path:
-            new_elements = self.handler.add_pdf_file(file_path, collaped_load=True)
+            new_elements = self.handler.add_pdf_file(file_path, collaped_load=collapsed_load)
 
             for elem in new_elements:
                 if not elem.collapsed:
@@ -157,7 +167,8 @@ class App(tk.Tk):
                     self.add_collapsed_frame(elem)
 
             # Display changes
-            self.display()
+            if not debug_filepath:
+                self.display()
 
     def add_page_frame(self, element):
         self.view_frames[element.id] = PageFrame(self.view, element=element,
@@ -173,7 +184,7 @@ class App(tk.Tk):
 
         # Determine current view size
         self.update()
-        view_elem_width = 140  # TODO TEMP
+        view_elem_width = 160  # TODO TEMP
         elements_per_row = int(self.view.winfo_width()/view_elem_width)
 
         for i, element in enumerate(self.handler.get_structure()):
@@ -184,6 +195,13 @@ class App(tk.Tk):
         for element in self.view.winfo_children():
             element.display_preview_image()
 
+
 if __name__ == '__main__':
     app = App()
+
+    app.on_add_new_pdf("files/aub.pdf")
+    app.on_add_new_pdf("files/Android_iOS.pdf")
+    app.on_add_new_pdf("files/master_krankmeldung_verlängerungsantrag.pdf", collapsed_load=False)
+
+
     app.mainloop()
